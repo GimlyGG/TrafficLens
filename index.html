@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Centarus 1.19.0 — обход, который сам себя чинит</title>
+<meta name="description" content="Centarus — монитор трафика и управления zapret для Windows. Сторож обхода сам замечает, что сайты перестали открываться, и сам чинит обход.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='13' fill='%230A1120' stroke='%2335D6ED' stroke-width='2'/><circle cx='16' cy='16' r='4' fill='%2335D6ED'/></svg>">
+<style>
+  :root {
+    --bg: #05070D;
+    --card: #0A1120;
+    --card2: #0F1728;
+    --stroke: #16203A;
+    --stroke2: #22304F;
+    --text: #EDF2FB;
+    --text2: #B7C4DB;
+    --muted: #8DA2C0;
+    --dim: #4C5B77;
+    --accent: #35D6ED;
+    --accent2: #8B7CFF;
+    --ok: #3BE08B;
+    --warn: #FFB84D;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 "Segoe UI", "Inter", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  .glow {
+    position: fixed; inset: -20% -10% auto -10%; height: 620px; z-index: 0;
+    background:
+      radial-gradient(520px 260px at 18% 0%, rgba(53,214,237,.16), transparent 70%),
+      radial-gradient(560px 280px at 82% 6%, rgba(139,124,255,.14), transparent 72%);
+    pointer-events: none;
+  }
+  .wrap { position: relative; z-index: 1; max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+  header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 26px 0 10px;
+  }
+  .logo {
+    width: 38px; height: 38px; border-radius: 12px; flex: none;
+    background: linear-gradient(135deg, rgba(53,214,237,.22), rgba(139,124,255,.22));
+    border: 1px solid var(--stroke2);
+    display: grid; place-items: center;
+  }
+  .logo i {
+    width: 12px; height: 12px; border-radius: 50%; display: block;
+    background: var(--accent); box-shadow: 0 0 14px rgba(53,214,237,.9);
+  }
+  .brand { font-weight: 700; letter-spacing: .3px; font-size: 18px; }
+  .brand span { color: var(--dim); font-weight: 500; margin-left: 8px; font-size: 13px; }
+  header .spacer { flex: 1; }
+  .chip {
+    font-size: 12.5px; color: var(--text2); border: 1px solid var(--stroke2);
+    background: rgba(10,17,32,.7); padding: 5px 11px; border-radius: 999px;
+    white-space: nowrap;
+  }
+  .chip b { color: var(--accent); font-weight: 600; }
+  .hero { padding: 54px 0 8px; }
+  .hero h1 {
+    font-size: clamp(34px, 5.2vw, 58px); line-height: 1.06; margin: 18px 0 0;
+    letter-spacing: -1.2px; font-weight: 700;
+  }
+  .hero h1 span {
+    background: linear-gradient(100deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .lead { color: var(--text2); font-size: 17.5px; max-width: 620px; margin: 20px 0 0; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; margin: 30px 0 0; align-items: center; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 14px 22px; border-radius: 12px; font-weight: 600; font-size: 15px;
+    border: 1px solid transparent; transition: transform .12s ease, box-shadow .12s ease, background .12s;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn.primary {
+    background: linear-gradient(120deg, var(--accent), var(--accent2));
+    color: #04121A; box-shadow: 0 10px 30px rgba(53,214,237,.22);
+  }
+  .btn.primary small { font-weight: 600; opacity: .72; }
+  .btn.ghost { border-color: var(--stroke2); color: var(--text2); background: rgba(10,17,32,.6); }
+  .btn.ghost:hover { color: var(--text); border-color: var(--accent); }
+  .sha {
+    margin: 18px 0 0; font-size: 12.5px; color: var(--dim);
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  }
+  .sha code {
+    font-family: "Cascadia Mono", Consolas, monospace; color: var(--muted);
+    background: var(--card); border: 1px solid var(--stroke); padding: 3px 8px; border-radius: 7px;
+  }
+  .sha button {
+    font: inherit; font-size: 12px; cursor: pointer; color: var(--muted);
+    background: transparent; border: 1px solid var(--stroke2); border-radius: 7px; padding: 3px 9px;
+  }
+  .sha button:hover { color: var(--accent); border-color: var(--accent); }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 46px 0 0; }
+  .card {
+    background: linear-gradient(180deg, var(--card2), var(--card));
+    border: 1px solid var(--stroke); border-radius: 16px; padding: 20px;
+  }
+  .card .dot {
+    width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+    background: rgba(53,214,237,.12); color: var(--accent); font-size: 15px; margin-bottom: 12px;
+    border: 1px solid rgba(53,214,237,.22);
+  }
+  .card h3 { margin: 0 0 6px; font-size: 15.5px; font-weight: 650; }
+  .card p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+  .panel {
+    margin: 26px 0 0; background: rgba(10,17,32,.66); border: 1px solid var(--stroke);
+    border-radius: 18px; padding: 24px;
+  }
+  .panel > h2 {
+    margin: 0 0 16px; font-size: 12px; letter-spacing: 1.4px; text-transform: uppercase;
+    color: var(--muted); font-weight: 700;
+  }
+  .notes { margin: 0; padding: 0; list-style: none; }
+  .notes li { position: relative; padding-left: 22px; margin: 0 0 9px; color: var(--text2); font-size: 14.6px; }
+  .notes li::before {
+    content: ""; position: absolute; left: 4px; top: .62em; width: 6px; height: 6px;
+    border-radius: 50%; background: var(--accent);
+  }
+  ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: s; }
+  ol.steps li {
+    counter-increment: s; position: relative; padding-left: 40px; margin: 0 0 14px;
+    color: var(--text2); font-size: 14.6px;
+  }
+  ol.steps li::before {
+    content: counter(s); position: absolute; left: 0; top: -2px; width: 26px; height: 26px;
+    border-radius: 50%; display: grid; place-items: center; font-size: 12.5px; font-weight: 700;
+    color: var(--accent); background: rgba(53,214,237,.1); border: 1px solid rgba(53,214,237,.28);
+  }
+  ol.steps b { color: var(--text); font-weight: 600; }
+  .rel { border-top: 1px solid var(--stroke); padding: 14px 0 0; margin: 14px 0 0; }
+  .rel:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
+  .rel .row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .rel .v { font-weight: 650; font-size: 15px; }
+  .rel .d { color: var(--dim); font-size: 12.5px; }
+  .rel .tag {
+    font-size: 11.5px; color: var(--ok); border: 1px solid rgba(59,224,139,.3);
+    background: rgba(59,224,139,.1); padding: 1px 8px; border-radius: 999px;
+  }
+  .rel p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+  .rel .dl {
+    margin-left: auto; font-size: 12.5px; color: var(--accent);
+    border: 1px solid rgba(53,214,237,.32); border-radius: 999px;
+    padding: 1px 10px; white-space: nowrap;
+  }
+  .rel .dl:hover { background: rgba(53,214,237,.1); }
+  .rollback { margin: -6px 0 18px; color: var(--dim); font-size: 13.5px; }
+  .channel {
+    margin: 26px 0 0; font-size: 13px; color: var(--dim);
+    border: 1px dashed var(--stroke2); border-radius: 12px; padding: 14px 16px;
+  }
+  .channel code { color: var(--muted); font-family: "Cascadia Mono", Consolas, monospace; }
+  footer {
+    margin: 44px 0 0; padding: 22px 0 46px; border-top: 1px solid var(--stroke);
+    color: var(--dim); font-size: 13px; display: flex; gap: 14px; flex-wrap: wrap;
+  }
+  footer .spacer { flex: 1; }
+  @media (max-width: 780px) {
+    .grid { grid-template-columns: 1fr; }
+    .hero { padding-top: 34px; }
+    header .chip { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="wrap">
+  <header>
+    <div class="logo"><i></i></div>
+    <div class="brand">Centarus <span>монитор трафика и обхода</span></div>
+    <div class="spacer"></div>
+    <div class="chip">версия <b>1.19.0</b> · Windows</div>
+  </header>
+
+  <section class="hero">
+    <div class="chip">сборка 2026-11-24 16:56 · 45.2 МБ</div>
+    <h1>Обход, который<br><span>сам себя чинит</span></h1>
+    <p class="lead">
+      Centarus следит за трафиком и за обходом блокировок. Если сайты перестали
+      открываться — замечает сам, поднимает <code>winws.exe</code> и подбирает
+      рабочую стратегию. Без ваших кликов и без окон UAC.
+    </p>
+    <div class="cta">
+      <a class="btn primary" href="Centarus.exe" download>Скачать для Windows <small>45.2 МБ</small></a>
+      <a class="btn ghost" href="#install">Как установить</a>
+    </div>
+    <div class="sha">
+      <span>sha256</span>
+      <code id="sha">f5589db00145127706ce785e95b6260f31cefd96b8768e2c338c83bb501fa132</code>
+      <button id="copy" type="button">копировать</button>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <div class="dot">✓</div>
+      <h3>Сторож обхода</h3>
+      <p>Раз в N минут заходит на сервисы. Полный отказ — перезапуск, потом смена
+         стратегии. Частичный сбой не трогает рабочие сервисы.</p>
+    </div>
+    <div class="card">
+      <div class="dot">⟳</div>
+      <h3>Применяет сам</h3>
+      <p>Включили обход один раз — дальше он поднимается при старте и возвращается,
+         если процесс упал. Выключили вручную — не трогает.</p>
+    </div>
+    <div class="card">
+      <div class="dot">⚡</div>
+      <h3>Без дыры в соединении</h3>
+      <p>Подмена стратегии ждёт фактический выход процесса, а не фиксированную
+         паузу: обход лежит доли секунды.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Что нового в 1.19.0</h2>
+    <ul class="notes">
+      <li>Замер скорости больше не врёт: можно выбрать адаптер, виртуальные (VPN) помечены и стоят в конце, а сам замер идёт мимо системного прокси. Адаптер канала определяется по маршруту по умолчанию. «О приложении» стало отдельной страницей, обход возвращается после перезапуска.</li>
+    </ul>
+  </section>
+
+  <section class="panel" id="install">
+    <h2>Как установить</h2>
+    <ol class="steps">
+      <li><b>Скачайте</b> <code>Centarus.exe</code> и положите в любую папку —
+          установщика нет, это один файл.</li>
+      <li><b>Нужен zapret.</b> Если папки нет, на странице «Запрет» есть кнопка
+          «Скачать zapret» — она возьмёт последний релиз с GitHub.</li>
+      <li><b>Запустите от администратора</b> (правой кнопкой → «Запуск от имени
+          администратора»): без прав нельзя поднимать <code>winws.exe</code>.</li>
+      <li><b>Включите «Применять обход автоматически»</b> в настройках — дальше
+          приложение следит за обходом само.</li>
+    </ol>
+  </section>
+
+  <section class="panel" id="requirements">
+    <h2>Что нужно</h2>
+    <ul class="notes">
+      <li><b>Windows 10 или 11, 64-бит.</b> Другие системы не поддерживаются:
+          приложение работает с сетевыми адаптерами через WinAPI.</li>
+      <li><b>Права администратора</b> — только для запуска <code>winws.exe</code>.
+          Мониторинг, диагностика и отчёты работают без них.</li>
+      <li><b>Папка zapret</b> со стратегиями. Centarus не придумывает аргументы
+          обхода: он выбирает из того, что лежит в <code>.bat</code>-файлах.</li>
+      <li><b>Около 50 МБ на диске</b> и интернет для проверки обновлений.
+          Записи на диск — единицы мегабайт в сутки.</li>
+    </ul>
+  </section>
+
+  <section class="panel" id="help">
+    <h2>Если что-то не работает</h2>
+    <ol class="steps">
+      <li><b>Сайты не открываются.</b> Страница «Запрет» → «Диагностика»: она
+          скажет, что именно мешает — подмена DNS, блок адреса, фильтр по имени
+          без пересборки потока или с ней. Совет подскажет следующий шаг.</li>
+      <li><b>Обход не поднимается.</b> Проверьте, что приложение запущено от
+          администратора: без прав <code>winws.exe</code> не стартует, и в
+          журнале появится предупреждение.</li>
+      <li><b>Обновление не встало.</b> Скачайте файл вручную с этой страницы и
+          замените старый — настройки лежат отдельно, в
+          <code>%APPDATA%\Centarus</code>, и не потеряются.</li>
+      <li><b>Новая версия хуже.</b> Ниже в истории — три прошлые сборки: скачайте
+          нужную и замените файл. В приложении для этого есть кнопка «Откатить».</li>
+    </ol>
+  </section>
+
+  <section class="panel">
+    <h2>История версий</h2>
+    <p class="rollback">Предыдущих сборок на сайте пока нет — они появятся со следующей версией.</p>
+    <div class="rel">
+      <div class="row"><span class="v">1.19.0</span><span class="d">2026-11-24T16:56</span><span class="tag">текущая</span></div>
+      <p>Замер скорости больше не врёт: можно выбрать адаптер, виртуальные (VPN) помечены и стоят в конце, а сам замер идёт мимо системного прокси. Адаптер канала определяется по маршруту по умолчанию. «О приложении» стало отдельной страницей, обход возвращается после перезапуска.</p>
+    </div>
+  </section>
+
+  <div class="channel">
+    Канал обновлений: <code>https://raw.githubusercontent.com/GimlyGG/TrafficLens/main/Centarus.update.json/Centarus.update.json</code><br>
+    Приложение само сверяется с ним при запуске и ставит новую сборку после выхода.
+  </div>
+
+  <footer>
+    <span>Centarus 1.19.0</span>
+    <span class="spacer"></span>
+    <span>Windows 10/11 · x64</span>
+  </footer>
+</div>
+<script>
+  var copy = document.getElementById("copy");
+  var sha = document.getElementById("sha");
+  if (copy && sha) {
+    copy.addEventListener("click", function () {
+      var text = sha.textContent || "";
+      if (navigator.clipboard) { navigator.clipboard.writeText(text); }
+      copy.textContent = "скопировано";
+      setTimeout(function () { copy.textContent = "копировать"; }, 1400);
+    });
+  }
+</script>
+</body>
+</html>
