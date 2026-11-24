@@ -1,0 +1,10 @@
+{
+  "version": "1.19.0",
+  "build": "2026-11-24T16:56",
+  "file": "https://github.com/GimlyGG/TrafficLens/releases/download/v1.19.0/Centarus-1.19.0.exe",
+  "sha256": "f5589db00145127706ce785e95b6260f31cefd96b8768e2c338c83bb501fa132",
+  "size": 47414320,
+  "notes": "Замер скорости больше не врёт: можно выбрать адаптер, виртуальные (VPN) помечены и стоят в конце, а сам замер идёт мимо системного прокси. Адаптер канала определяется по маршруту по умолчанию. «О приложении» стало отдельной страницей, обход возвращается после перезапуска.",
+  "history": [],
+  "source": "https://github.com/GimlyGG/TrafficLens/releases/download/v1.19.0/Centarus-1.19.0-src.zip"
+}
