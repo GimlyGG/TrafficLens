@@ -1,18 +1,10 @@
 {
-  "version": "1.24.7",
-  "build": "2026-11-25T20:25",
-  "file": "https://github.com/GimlyGG/TrafficLens/releases/download/v1.24.7/Centarus-1.24.7.exe",
-  "sha256": "65a1dc64fbf80073af03298b99e32aa802360b7986bd1c7a762f72b0a1ab5b89",
-  "size": 48596986,
-  "notes": "Один exe, который обновляет себя сам: качает в фоне (прогресс в трее), закрывается, подменяет файл, проверяет что новая версия запустилась, при провале откатывается на прошлую. Никаких .new и батников рядом. Плюс: узлы списком как в обычных VPN-клиентах (точка подключён/нет, задержка, «лучший», двойной щелчок, переключение на другой узел сразу), автовосстановление упавшего туннеля (три попытки), и главное — снятие мёртвого системного прокси: раньше страница показывала зелёное «прокси включён», а порт уже не слушал, и все программы рвали соединение.",
-  "history": [
-    {
-      "version": "1.24.6",
-      "file": "https://github.com/GimlyGG/TrafficLens/releases/download/v1.24.6/Centarus-1.24.6.exe",
-      "sha256": "d612060d1a1e4d4467fabf7474621821ee0f04a5223d040ca4d00544a206b0d0",
-      "size": 48592611,
-      "notes": "предыдущая версия"
-    }
-  ],
-  "source": "https://github.com/GimlyGG/TrafficLens/releases/download/v1.24.7/Centarus-1.24.7-src.zip"
+  "version": "1.24.8",
+  "build": "2026-11-28T12:26",
+  "file": "https://github.com/GimlyGG/TrafficLens/releases/download/v1.24.8/Centarus-1.24.8.exe",
+  "sha256": "a662686740a5636c3dd078a9910012cc842a9b02c697e080ee09290f447db807",
+  "size": 49519239,
+  "notes": "Стекло и матовый чёрный, DoH, универсальный обход и диагностика, CPU 0.16 % в простое, иконки 1.00 на всех DPI",
+  "history": [],
+  "source": "https://github.com/GimlyGG/TrafficLens/releases/download/v1.24.8/Centarus-1.24.8-src.zip"
 }
